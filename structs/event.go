@@ -96,13 +96,10 @@ func (e *EventData) NormalizeData() error {
 			}
 
 			switch val := v.(type) {
-			case int, int8, int16, int32, int64,
-				uint, uint8, uint16, uint32, uint64, bool, float32, float64:
 			case string:
 				if len(val) > VALUE_MAX {
 					return fmt.Errorf("the max length of property value is %d, key = %s", VALUE_MAX, k)
 				}
-				e.Properties[k] = val
 
 			case []string:
 				for _, s := range val {
@@ -110,13 +107,8 @@ func (e *EventData) NormalizeData() error {
 						return fmt.Errorf("the max length of property value is %d, key = %s", VALUE_MAX, k)
 					}
 				}
-				e.Properties[k] = val
-
 			case time.Time:
 				e.Properties[k] = val.Format("2006-01-02 15:04:05.999")
-
-			default:
-				return fmt.Errorf("unsupported property value type %T, key = %s", v, k)
 			}
 		}
 	}
