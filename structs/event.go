@@ -54,7 +54,7 @@ func init() {
 }
 
 func (e *EventData) NormalizeData() error {
-	//check distinct id
+	// check distinct id
 	if e.DistinctId == "" || len(e.DistinctId) == 0 {
 		return errors.New("property [distinct_id] can't be empty")
 	}
@@ -63,7 +63,7 @@ func (e *EventData) NormalizeData() error {
 		return errors.New("the max length of property [distinct_id] is 255")
 	}
 
-	//check event
+	// check event
 	if e.Event != "" {
 		isMatch := checkPattern([]byte(e.Event))
 		if !isMatch {
@@ -71,7 +71,7 @@ func (e *EventData) NormalizeData() error {
 		}
 	}
 
-	//check project
+	// check project
 	if e.Project != "" {
 		isMatch := checkPattern([]byte(e.Project))
 		if !isMatch {
@@ -79,10 +79,10 @@ func (e *EventData) NormalizeData() error {
 		}
 	}
 
-	//check properties
+	// check properties
 	if e.Properties != nil {
 		for k, v := range e.Properties {
-			//check key
+			// check key
 			if len(k) > KEY_MAX {
 				return errors.New("the max length of property key is 100," + "key = " + k)
 			}
@@ -95,21 +95,28 @@ func (e *EventData) NormalizeData() error {
 				return errors.New("property key must be a valid variable name," + "key = " + k)
 			}
 
-			//check value
-			switch v.(type) {
-			case int:
-			case bool:
-			case float64:
+			switch val := v.(type) {
+			case int, int8, int16, int32, int64,
+				uint, uint8, uint16, uint32, uint64, bool, float32, float64:
 			case string:
-				if len(v.(string)) > VALUE_MAX {
-					return errors.New("the max length of property value is 8192," + "value = " + v.(string))
+				if len(val) > VALUE_MAX {
+					return fmt.Errorf("the max length of property value is %d, key = %s", VALUE_MAX, k)
 				}
-			case []string: //value in properties list MUST be string
-			case time.Time: //only support time.Time
-				e.Properties[k] = v.(time.Time).Format("2006-01-02 15:04:05.999")
+				e.Properties[k] = val
+
+			case []string:
+				for _, s := range val {
+					if len(s) > VALUE_MAX {
+						return fmt.Errorf("the max length of property value is %d, key = %s", VALUE_MAX, k)
+					}
+				}
+				e.Properties[k] = val
+
+			case time.Time:
+				e.Properties[k] = val.Format("2006-01-02 15:04:05.999")
 
 			default:
-				return errors.New("property value must be a string/int/float64/bool/time.Time/[]string," + "key = " + k)
+				return fmt.Errorf("unsupported property value type %T, key = %s", v, k)
 			}
 		}
 	}
